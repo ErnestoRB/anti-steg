@@ -1,4 +1,4 @@
-use image::{GenericImageView, ImageBuffer, Rgb, Rgba};
+use image::{DynamicImage, GenericImageView, ImageBuffer, Rgb, Rgba};
 use std::env;
 use std::path::Path;
 
@@ -13,19 +13,36 @@ fn limpiar_imagen(input_path: &str, output_path: &str) {
     let (width, height) = img.dimensions();
 
     // 4
-    let mut img_limpiada = ImageBuffer::new(width, height);
+    let mut img_limpiada: DynamicImage;
 
     // 5
-    for (x, y, pixel) in img.pixels() {
-        let Rgba(data) = pixel;
-
-        // 6
-        let r = limpiar_lsb(data[0]);
-        let g = limpiar_lsb(data[1]);
-        let b = limpiar_lsb(data[2]);
-
-        // 8
-        img_limpiada.put_pixel(x, y, Rgb([r, g, b]));
+    match img {
+        DynamicImage::ImageRgba8(_) | DynamicImage::ImageRgba16(_) => {
+            let mut img_limpiada_rgba = ImageBuffer::new(width, height);
+            for (x, y, pixel) in img.pixels() {
+                let Rgba(data) = pixel;
+                // 6
+                let r = limpiar_lsb(data[0]);
+                let g = limpiar_lsb(data[1]);
+                let b = limpiar_lsb(data[2]);
+                let a = data[3];
+                img_limpiada_rgba.put_pixel(x, y, Rgba([r, g, b, a]));
+            }
+            img_limpiada = DynamicImage::ImageRgba8(img_limpiada_rgba);
+        }
+        _ => {
+            let mut img_limpiada_rgb = ImageBuffer::new(width, height);
+            for (x, y, pixel) in img.pixels() {
+                let Rgba(data) = pixel;
+                // 6
+                let r = limpiar_lsb(data[0]);
+                let g = limpiar_lsb(data[1]);
+                let b = limpiar_lsb(data[2]);
+                img_limpiada_rgb.put_pixel(x, y, Rgb([r, g, b]));
+                // 8
+            }
+            img_limpiada = DynamicImage::ImageRgb8(img_limpiada_rgb);
+        }
     }
 
     // 9
